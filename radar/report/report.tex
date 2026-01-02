@@ -1,0 +1,148 @@
+% =========================
+% Report Template (General)
+% =========================
+\documentclass[11pt,a4paper]{report}
+
+% ---------- Language & encoding ----------
+\usepackage[utf8]{inputenc}      % ok for pdfLaTeX
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% ---------- Page layout ----------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% ---------- Graphics, tables ----------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+
+% ---------- Math ----------
+\usepackage{amsmath,amssymb}
+
+% ---------- Links ----------
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Better references ----------
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+% ---------- Bibliography (simple) ----------
+% If you want BibTeX later, replace this with biblatex.
+\usepackage[numbers]{natbib}
+
+% ---------- Code listings (optional) ----------
+\usepackage{listings}
+
+% ---------- Title info ----------
+\title{Report Title}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+
+% ---------- Title page ----------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\bfseries Report Title\par}
+  \vspace{1cm}
+  {\large Course / Project / Module\par}
+  \vspace{1.5cm}
+  {\large Your Name\par}
+  {\large University / Organization\par}
+  \vfill
+  {\large \today\par}
+\end{titlepage}
+
+% ---------- Front matter ----------
+\pagenumbering{roman}
+\tableofcontents
+\listoffigures % remove if not needed
+\listoftables  % remove if not needed
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+Write a short abstract here (5--10 lines). Summarize the goal, method, and key result.
+
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+Optional: thank people, funding, etc.
+
+% ---------- Main matter ----------
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+Explain the context, motivation, and what the report covers.
+
+\section{Problem Statement}
+What exactly are you trying to solve/answer?
+
+\section{Contributions}
+A short bullet list can help:
+\begin{itemize}
+  \item Contribution 1
+  \item Contribution 2
+  \item Contribution 3
+\end{itemize}
+
+\chapter{Background / Theory}
+Define important concepts and cite sources \citep{knuth1984texbook}.
+
+\chapter{Methodology}
+Describe data, tools, assumptions, and procedure.
+
+\section{Data}
+Where does it come from? What format? Any cleaning?
+
+\section{Approach}
+Explain your steps, algorithms, or process.
+
+\chapter{Results}
+Present results with figures and tables.
+
+\section{Example Figure}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.75\textwidth]{images/example.png}
+  \caption{Example figure caption.}
+  \label{fig:example}
+\end{figure}
+
+Reference it like \cref{fig:example}.
+
+\section{Example Table}
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lrr}
+    \toprule
+    Item & Value A & Value B \\
+    \midrule
+    Foo  & 10      & 12 \\
+    Bar  & 7       & 9 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Example table caption.}
+  \label{tab:example}
+\end{table}
+
+Reference it like \cref{tab:example}.
+
+\chapter{Discussion}
+Interpret results: what do they mean, limitations, what surprised you, why it matters.
+
+\chapter{Conclusion}
+Summarize the key points and suggest future work.
+
+% ---------- Bibliography ----------
+\clearpage
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+% ---------- Appendix ----------
+\appendix
+\chapter{Extra Material}
+Put long tables, extra figures, or code here.
+
+\end{document}

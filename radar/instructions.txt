@@ -36,3 +36,9 @@ C:\msys64\mingw64\x86_64-w64-mingw32\include
 
 Save (it writes .vscode/c_cpp_properties.json)
 Press Ctrl+Shift+P → C/C++: Reset IntelliSense Database (or just reload window)
+
+
+
+
+REPORT:
+You need Latex Workshop VSC extension and a version of latex to compile tex files. 
