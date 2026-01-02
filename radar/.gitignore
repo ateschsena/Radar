@@ -1,0 +1,25 @@
+# LaTeX build output (LaTeX Workshop default out dir)
+out/
+
+# Common LaTeX aux files (in case you build into root)
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+
+# PDF output (optional: decide if you want PDFs versioned)
+*.pdf
+
+# Editor / OS junk
+.vscode/
+.DS_Store
+Thumbs.db
