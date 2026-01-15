@@ -13,8 +13,8 @@ const int URECHO    = 3;   // Arduino D3 -> URM37 Pin 4 ECHO
 Servo radarServo;
 
 // Adjust these if you want different scan behavior
-const int MIN_ANGLE = 0;
-const int MAX_ANGLE = 180;
+const int MIN_ANGLE = 10;
+const int MAX_ANGLE = 170;
 const int STEP_ANGLE = 2;
 
 const int SERVO_SETTLE_MS = 30;   // time to let servo reach the angle

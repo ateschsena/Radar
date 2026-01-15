@@ -10,7 +10,7 @@ int SIM_ANGLE_MAX = 180;
 float SIM_ANGLE_STEP = 1;      // degrees per frame/update
 
 // Distance mapping:
-float MAX_CM = 300;            // scale radar to 0..MAX_CM cm
+float MAX_CM = 100;            // scale radar to 0..MAX_CM cm
 float RADIUS_PX = 330;         // size of radar on screen
 
 // ===== Persistence (dot stays until overwritten, but fades over time) =====
@@ -44,7 +44,7 @@ void setup() {
   println("Available serial ports:");
   printArray(Serial.list());
 
-  port = new Serial(this, "COM5", BAUD); // replace with your Arduino COM
+  port = new Serial(this, "COM7", BAUD); // replace with your Arduino COM
   port.bufferUntil('\n'); // read line-by-line
 
   angleDeg = 0;
