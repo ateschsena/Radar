@@ -1,99 +1,106 @@
 #include <Servo.h>
 
+// =======================
 // PIN CONFIGURATION
+// =======================
+const int SERVO_PIN = 9;   // Servo signal pin
+const int URTRIG    = 5;   // Arduino D5 -> URM37 Pin 6 COMP/TRIG
+const int URECHO    = 3;   // Arduino D3 -> URM37 Pin 4 ECHO
 
-// Change only these if your wiring is different
-const int SERVO_PIN = 6;    // Servo signal pin
-const int TRIG_PIN  = 9;    // HC-SR04 TRIG pin
-const int ECHO_PIN  = 10;   // HC-SR04 ECHO pin
-
-
+// =======================
 // OBJECTS & VARIABLES
-
+// =======================
 Servo radarServo;
 
-long duration;   // Time of ultrasonic pulse
-int distance;    // Calculated distance in cm
+// Adjust these if you want different scan behavior
+const int MIN_ANGLE = 0;
+const int MAX_ANGLE = 180;
+const int STEP_ANGLE = 2;
 
+const int SERVO_SETTLE_MS = 30;   // time to let servo reach the angle
+const int BETWEEN_READ_MS = 10;   // small gap between trigger and read (optional)
 
+// =======================
 // SETUP
-
+// =======================
 void setup() {
-  // Attach servo to its signal pin
   radarServo.attach(SERVO_PIN);
 
-  // Configure ultrasonic sensor pins
-  pinMode(TRIG_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
+  pinMode(URTRIG, OUTPUT);
+  pinMode(URECHO, INPUT);
 
-  // Make sure TRIG is LOW at start
-  digitalWrite(TRIG_PIN, LOW);
+  // URM37 idle state: HIGH
+  digitalWrite(URTRIG, HIGH);
 
-  // Start serial communication
   Serial.begin(9600);
+  delay(500);
 
-  // Give hardware time to stabilize
-  delay(1000);
-
-  Serial.println("RADAR SYSTEM READY");
+  Serial.println("RADAR SYSTEM READY (URM37 mode)");
+  Serial.println("Output format: angle,cm  (cm = -1 means out of range/no pulse)");
 }
 
-
+// =======================
 // MAIN LOOP
-
+// =======================
 void loop() {
-
-  // Sweep from 0 to 180 degrees
-  for (int angle = 0; angle <= 180; angle += 2) {
-    radarServo.write(angle);
-    delay(30); // Slow movement for stability
-
-    distance = measureDistance();
-    printData(angle, distance);
+  // Sweep forward
+  for (int angle = MIN_ANGLE; angle <= MAX_ANGLE; angle += STEP_ANGLE) {
+    scanStep(angle);
   }
 
-  // Sweep back from 180 to 0 degrees
-  for (int angle = 180; angle >= 0; angle -= 2) {
-    radarServo.write(angle);
-    delay(30);
-
-    distance = measureDistance();
-    printData(angle, distance);
+  // Sweep backward
+  for (int angle = MAX_ANGLE; angle >= MIN_ANGLE; angle -= STEP_ANGLE) {
+    scanStep(angle);
   }
 }
 
+// =======================
+// ONE SCAN STEP
+// =======================
+void scanStep(int angle) {
+  radarServo.write(angle);
+  delay(SERVO_SETTLE_MS);
 
-// DISTANCE MEASUREMENT
+  int cm = measureDistanceURM37();
 
-int measureDistance() {
-  // Send ultrasonic trigger pulse
-  digitalWrite(TRIG_PIN, LOW);
-  delayMicroseconds(2);
-  digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
-
-  // Measure echo time (timeout = 30 ms)
-  duration = pulseIn(ECHO_PIN, HIGH, 30000);
-
-  // If no echo received
-  if (duration == 0) return -1;
-
-  // Convert time to distance (cm)
-  return duration * 0.034 / 2;
-}
-
-
-// SERIAL OUTPUT
-
-void printData(int angle, int dist) {
+  // Print as "angle,cm" (easy to parse in Serial Plotter / Processing)
   Serial.print(angle);
   Serial.print(",");
+  Serial.println(cm);
 
-  // Filter invalid or out-of-range values
-  if (dist > 0 && dist < 400) {
-    Serial.println(dist);
-  } else {
-    Serial.println(0);
+  delay(BETWEEN_READ_MS);
+}
+
+// =======================
+// DISTANCE MEASUREMENT (URM37-style)
+// - Trigger: short LOW pulse, then HIGH
+// - Echo: LOW-level pulse width
+// - Conversion: 50 us = 1 cm  => cm = t / 50
+// =======================
+int measureDistanceURM37() {
+  // Start measurement: short LOW pulse
+  digitalWrite(URTRIG, LOW);
+  delayMicroseconds(50);
+  digitalWrite(URTRIG, HIGH);
+
+  // Read LOW pulse width (timeout 60ms)
+  unsigned long t = pulseIn(URECHO, LOW, 60000UL);
+
+  if (t == 0) {
+    // no pulse -> out of range / wiring / wrong mode
+    return -1;
   }
+
+  // Some example codes treat very large values as invalid
+  if (t >= 50000UL) {
+    return -1;
+  }
+
+  // Convert to cm (integer)
+  int cm = (int)(t / 50UL);
+
+  // Optional sanity clamp
+  if (cm <= 0 || cm > 500) return -1;
+
+  return cm;
 }
