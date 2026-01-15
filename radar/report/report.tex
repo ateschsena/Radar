@@ -25,6 +25,8 @@
 % -----------------------
 \usepackage{geometry}
 \geometry{margin=2.5cm}
+\usepackage{subcaption}
+
 
 \usepackage{setspace}
 \onehalfspacing
@@ -149,6 +151,13 @@ The concrete parsing logic and the radar UI update behaviour are described in de
 \section{Visualization}\label{sec:visualization}
 % =========================
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{images/finalVisual.png}
+  \caption{Final Processing-based radar visualization (grid, sweep line, and detections).}
+  \label{fig:final-visual}
+\end{figure}
+
 \subsection{Purpose of the visuals}
 The visualization provides a real-time radar user interface that makes the sensor data immediately interpretable. 
 The display is structured as a half-circle scan area ($0^\circ$--$180^\circ$) with a moving sweep line (``beam'') that 
@@ -174,10 +183,30 @@ The program scanned \texttt{COM1..COM64} automatically, toggled DTR to trigger A
 string such as \texttt{RADAR\_READY} to confirm the correct port. The intended workflow was: 
 connect USB $\rightarrow$ start program $\rightarrow$ automatic detection $\rightarrow$ live radar output.
 
-In practice, this setup proved unreliable for consistent operation. Windows serial behaviour is sensitive to port 
-contention (e.g., an open Serial Monitor), timing immediately after reset, and partial or malformed lines during Arduino boot; 
-additionally, COM port numbering differs across machines. The result was intermittent failure modes: sometimes no data, 
-sometimes incorrect or ``simulated-looking'' values, and occasional crashes when the expected line structure was not present in the buffer.
+In practice, this setup proved unreliable for consistent operation (Figure~\ref{fig:raylib-evidence}). 
+Windows serial behaviour is sensitive to port contention (e.g., an open Serial Monitor), timing immediately after reset, and partial or malformed lines during Arduino boot; additionally, COM port numbering differs across machines. 
+The resulting failure modes ranged from missing or malformed measurements to crashes caused by unexpected serial buffer contents (Figure~\ref{fig:raylib-crash}). 
+During debugging, the visualization often ran only in a simulated/virtual-sweep configuration, indicating that the prototype did not yet provide a robust sensor-driven end-to-end path (Figure~\ref{fig:raylib-sim}).
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/firstPrototypeCrash.png}
+    \caption{Prototype failure case: the application becomes unresponsive / renders a blank window after receiving unexpected or incomplete serial data.}
+    \label{fig:raylib-crash}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/fistPrototype.png}
+    \caption{Prototype running with virtual sweep / simulated values (\texttt{SIMULATE} mode), illustrating that the displayed ``distance'' did not reliably represent real sensor measurements.}
+    \label{fig:raylib-sim}
+  \end{subfigure}
+
+  \caption{Screenshots from the C+\texttt{raylib} prototype highlighting practical issues: unreliable serial I/O and non-robust handling of malformed input, motivating the switch to Processing.}
+  \label{fig:raylib-evidence}
+\end{figure}
+
 
 The rendering portion was successful, but low-level serial I/O on Windows became disproportionately time-consuming compared to 
 the core project goal of iterating on the visualization and pipeline behaviour.
@@ -190,7 +219,30 @@ line-based framing, and \texttt{serialEvent()} receives complete records. This r
 pitfalls and allowed focus to shift back to the visualization logic and the end-to-end data pipeline.
 
 \subsection{How the current Processing radar UI works}
+  Figure~\ref{fig:proc-evolution} shows two intermediate visualization iterations developed while validating the scan logic and UI behaviour.
+
+  
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/secondPrototype.png}
+    \caption{Early Processing prototype: the sweep and grid were rendered with an inverted orientation. The simulated angle mode enabled rapid debugging of the coordinate mapping before servo feedback was available.}
+    \label{fig:proc-early-inverted}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/secondPrototypeFade.png}
+    \caption{Intermediate iteration: a fading trail was implemented by storing recent measurements per angle bucket and decreasing their alpha over time. This effect was later adjusted/removed to match the desired radar behaviour.}
+    \label{fig:proc-trail-fade}
+  \end{subfigure}
+
+  \caption{Evolution of the Processing-based radar visualization during development.}
+  \label{fig:proc-evolution}
+\end{figure}
+
 The Processing-based system can be described as a clear data pipeline from connection to rendered output:
+
 
 \begin{enumerate}
   \item \textbf{Arduino plugged in.}
@@ -208,6 +260,7 @@ The Processing-based system can be described as a clear data pipeline from conne
     \item ignores non-data noise (e.g., boot messages or handshake strings),
     \item parses either a single distance value or a pair \textit{angle} + \textit{distance}.
   \end{itemize}
+
   If only distance is present, the program updates the current distance and continues using the simulated sweep angle. 
   If angle and distance are provided, the real servo angle becomes the authoritative scan direction.
 
@@ -235,6 +288,8 @@ The Processing-based system can be described as a clear data pipeline from conne
   that entry is overwritten---either by a fresh detection, or by a clear if nothing is detected. This produces the intended 
   radar effect: detections persist briefly, then decay, and disappear naturally on refresh.
 \end{enumerate}
+
+
 
 
 \section{Conclusion}
