@@ -137,10 +137,75 @@ This keeps the code compatible with both phases of development (prototype vs fin
 
 
 7) How does the pipeline work
-- Serial Connection / COM port
-Arduino appears on the PC as serial device (Windows: COMx)
-The Processing sketch uses processing.serial.* and prints Serial.list() at startup to show available ports. 
-You select the correct port (e.g. COM7) and open it with a fixed baud rate (new Serial(this, "COM7, BAUD)), which must match the Arduino sketch's Serial.begin(BAUD).
-- Baud rate + reliability requirements
+End-to-end pipeline: Sensor -> Arduino -> USB -> OS -> Processing -> Visualization
 
+1. Hardware side: sensing + acutation on the Arduino
+- Acutation (servo sweep)
+    The Arduino generates a PWM control signal on SERVO_PIN to set the radar head to a specific angle.
+    The sweep is implemented a two loops: forward (MIN -> MAX) and backward (MAX -> MIN), step wise (STEP_ANGLE).
+    After each radarServo.write(angle), the code waits so the motor physically reaches the target position before measuring.
+- Distance measurement (URM37 echo timing)
+    Arduino triggers the ultrasonic measurement by sending a short pulse on URTRIG.
+    It measures the duration of the echo pulse on URECHO using pulseIn(...).
+    This is effectively a time-to-distance conversion:
+        sensor returns a pulse width t (microseconds)
+        sketch converts it to centimeters using the URM37 specific rule cm = t/50
+    If no pulse arrives within timeout or values are unrealistic, it outputs -1 ("out of range / invalid").
+- Serialization of data
+    The Arduino sends results over UART-like serial using Serial.println(...) at 9600 baud
+    Our output format is human-readable ASCII: angle, cm (simple, line based, easy to debug and parse).
+
+2. USB layer: How the Arduino becomes a "serial.port" on a PC. 
+ - USB is not raw UART, but the arduino is exposed to the OS as a USB serial device (virtual serial port).
+ - When you plug in the board, the OS performs US enumeration:
+    reads device descriptors (VID/PID, class, endpoints)
+    loads a matching driver (CDC ACM driver or vendor-specific driver)
+    creates a system-visible device that apps can open as a byte stream
+- OS-specific representation
+    Windows: the driver creates a COM port (e.g. COM7)
+    Apps open it via Win32 serial APIs (internally CreateFile("\\\\.\\COM7") style).
+    macOS: the device apprears as /dev/tty.* or /dev/cu." 
+    Apps open it like a file via POSIX I/O
+    Linux: typically /dev/ttyACM0 or /dev/ttyUSB0
+- One-process ownership
+    Serial devices are typically exclusive:
+    If Arduino Serial Motor is open, Processing can't open the same port.
+- Reset on connect 
+    On Arduino boards, opening the serial port toggles DTR/RTS which sar reset the Arduino.
+    That means setup() runs again and initial text lines are printed after connection.
+
+3. Processing side: how program receives + interprets the stream
+- Port discovery and opening
+    Processing lists available serial ports
+    You can open the correct port explicitly (new Serial(this, "COM7", 9600))
+    Matching the baud rate is mandatory
+- Stream to message framing
+    OS gives Processing a continuous byte stream (no message boundaries)
+    You define message boundaries by sending newline-terminated lines from Arduino
+    Processing uses bufferUntil('\n') so it receives complete "records"
+- Parsing the protocol
+    In serialEvent() you:
+        read one line
+        trim it
+        ignore noise/boot messages
+        split by comma
+        parse angle + distance
+    This creates an explicit software pipeline:
+        bytes -> lines -> tokens -> numeric values -> visualization state
+
+
+4. Visualization logic: mapping measurements to the radar display
+- Coordinate mapping
+    Angle (degrees) is converted to radians and used for polar -> Cartesian conversion:
+        x = cx + cos(rad)*r
+        y = cy - sin(rad)*r
+    Distance is scaled to pixels using map(cm,0..MAX_CM -> 0..RADIUS_PX)
+- Sweep overwrites old data model
+    Display keeps one stored measurement per angle bucket (Ping[] latest), e.g. every 2 degrees.
+    Each time the sweep passes a bucket:
+        if measurement valid: store new Ping and reset "born time"
+        if invalid/out of range: clear that bucket(latest[aInt] = null)
+    This mimicks real radar behaviour: beam "refreshes" the screen, and old detections disappear once re-scanned
+
+    
 

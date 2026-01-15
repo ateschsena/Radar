@@ -1,148 +1,249 @@
-% =========================
-% Report Template (General)
-% =========================
-\documentclass[11pt,a4paper]{report}
+% !TEX program = pdflatex
+\documentclass[11pt,a4paper]{article}
 
-% ---------- Language & encoding ----------
-\usepackage[utf8]{inputenc}      % ok for pdfLaTeX
+% -----------------------
+% Encoding + language
+% -----------------------
 \usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 
-% ---------- Page layout ----------
-\usepackage[a4paper,margin=2.5cm]{geometry}
+% -----------------------
+% Scalable fonts (fixes pdfTeX microtype expansion issues)
+% -----------------------
+\usepackage{lmodern}
+
+% -----------------------
+% Typography (safe microtype config)
+% -----------------------
+\usepackage[final]{microtype}
+% If your setup still complains, uncomment the next line:
+% \microtypesetup{expansion=false}
+
+% -----------------------
+% Page layout
+% -----------------------
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
 \usepackage{setspace}
 \onehalfspacing
 
-% ---------- Graphics, tables ----------
-\usepackage{graphicx}
-\usepackage{booktabs}
-\usepackage{array}
-
-% ---------- Math ----------
+% -----------------------
+% Math + symbols
+% -----------------------
 \usepackage{amsmath,amssymb}
 
-% ---------- Links ----------
+% -----------------------
+% Figures + tables
+% -----------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+
+% -----------------------
+% Links
+% -----------------------
 \usepackage[hidelinks]{hyperref}
 
-% ---------- Better references ----------
-\usepackage[nameinlink,noabbrev]{cleveref}
-
-% ---------- Bibliography (simple) ----------
-% If you want BibTeX later, replace this with biblatex.
-\usepackage[numbers]{natbib}
-
-% ---------- Code listings (optional) ----------
+% -----------------------
+% Code listings (optional)
+% -----------------------
+\usepackage{xcolor}
 \usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  showstringspaces=false
+}
 
-% ---------- Title info ----------
-\title{Report Title}
-\author{Your Name}
+% -----------------------
+% Nice lists
+% -----------------------
+\usepackage{enumitem}
+\setlist{noitemsep, topsep=0.3em}
+
+% -----------------------
+% Title meta
+% -----------------------
+\title{Radar Visualization Pipeline Report}
+\author{Aiysha Mei Frutiger, Sandro Barbazza, Senanur Ates,  \\ University of Basel \\ Computer Architecture}
 \date{\today}
 
 \begin{document}
+\maketitle
 
-% ---------- Title page ----------
-\begin{titlepage}
-  \centering
-  \vspace*{2cm}
-  {\LARGE\bfseries Report Title\par}
-  \vspace{1cm}
-  {\large Course / Project / Module\par}
-  \vspace{1.5cm}
-  {\large Your Name\par}
-  {\large University / Organization\par}
-  \vfill
-  {\large \today\par}
-\end{titlepage}
+\begin{abstract}
+Abstract of project
+\end{abstract}
 
-% ---------- Front matter ----------
-\pagenumbering{roman}
 \tableofcontents
-\listoffigures % remove if not needed
-\listoftables  % remove if not needed
+\newpage
 
-\chapter*{Abstract}
-\addcontentsline{toc}{chapter}{Abstract}
-Write a short abstract here (5--10 lines). Summarize the goal, method, and key result.
+% ==========================================================
+\section{Introduction}
 
-\chapter*{Acknowledgements}
-\addcontentsline{toc}{chapter}{Acknowledgements}
-Optional: thank people, funding, etc.
+A ``radar screen'' is one of the simplest ways to make an invisible physical process visible: a single moving line, a few dots, and suddenly distance 
+becomes something that can be seen in real time. This project implements a compact ultrasonic ``radar'' as a classic learning system that remains feasible 
+to build while still exposing an unusually complete end-to-end pipeline. The motivation is primarily educational: a timing-based sensor measurement 
+is performed on a microcontroller, the results are streamed to a computer over USB as a serial data protocol, and a visualization program turns the incoming 
+measurements into an immediately interpretable display. In this sense, the system is less about replicating military radar and more about demonstrating 
+architecture-relevant concepts in a tangible form---signal acquisition, data representation, I/O interfaces, and real-time feedback.
 
-% ---------- Main matter ----------
-\clearpage
-\pagenumbering{arabic}
+The underlying mapping principle follows the radar idea: a wave is emitted, reflections are received, and distance is derived from time-of-flight. 
+To place a measured distance in space, it must also be associated with an angle. This directional component can be obtained by mechanically rotating the 
+sensor (servo-based scanning) or, in more advanced systems, by electronically steering a beam using an array. Repeating measurements across many angles 
+produces a polar dataset (\textit{angle, distance}), which can be rendered as the familiar 2D ``radar screen.'' Although ultrasound is used 
+here (physically closer to sonar), the data model and visualization are radar-like: each measurement becomes a point in polar space.
 
-\chapter{Introduction}
-Explain the context, motivation, and what the report covers.
+A key aspect of the implementation is the explicit system boundary between embedded and host-side processing. The Arduino controls the scan and 
+performs the timing-critical distance measurement, then serializes results into a compact text stream (e.g., \texttt{angle,cm}) over USB. 
+The operating system exposes the device as a standard serial endpoint (COM/TTY), and the visualization application continuously reads, parses, 
+and renders the stream to update the display in real time. Development was also constraint-driven: early visual work was done with a prototype that 
+lacked a servo motor, so the display supported a simulated sweep angle to validate rendering and parsing before switching to the final protocol based 
+on real (\textit{angle, cm}) measurements once mechanical scanning was available.
 
-\section{Problem Statement}
-What exactly are you trying to solve/answer?
 
-\section{Contributions}
-A short bullet list can help:
-\begin{itemize}
-  \item Contribution 1
-  \item Contribution 2
-  \item Contribution 3
-\end{itemize}
+% =========================
+% End-to-End Pipeline
+% =========================
+\section{End-to-End Pipeline}
 
-\chapter{Background / Theory}
-Define important concepts and cite sources \citep{knuth1984texbook}.
+The system forms a complete measurement and visualization pipeline:
+Sensor $\rightarrow$ Arduino $\rightarrow$ USB $\rightarrow$ Operating System $\rightarrow$ Processing $\rightarrow$ Visualization.
 
-\chapter{Methodology}
-Describe data, tools, assumptions, and procedure.
-
-\section{Data}
-Where does it come from? What format? Any cleaning?
-
-\section{Approach}
-Explain your steps, algorithms, or process.
-
-\chapter{Results}
-Present results with figures and tables.
-
-\section{Example Figure}
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
- 
-  \caption{Example figure caption.}
-  \label{fig:example}
+  \includegraphics[width=0.90\linewidth]{images/Pipeline.png}
+  \caption{End-to-end pipeline from sensing on the Arduino to visualization on the host.}
+  \label{fig:pipeline}
 \end{figure}
 
-Reference it like \cref{fig:example}.
+An Arduino-to-PC visualization setup was selected because it exposes the full communication stack discussed in computer architecture in a compact, observable system: a physical device produces signals, a microcontroller converts those signals into data, a transport layer (USB) exposes the device to the host, an operating system abstracts the hardware as files/handles/ports, and an application interprets a continuous byte stream into meaningful state and graphics. This structure makes the transformation of information across layers explicit and traceable.
 
-\section{Example Table}
-\begin{table}[h]
-  \centering
-  \begin{tabular}{lrr}
-    \toprule
-    Item & Value A & Value B \\
-    \midrule
-    Foo  & 10      & 12 \\
-    Bar  & 7       & 9 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Example table caption.}
-  \label{tab:example}
-\end{table}
+\subsection{Hardware layer: actuation and sensing}
+On the hardware side, the Arduino functions as a real-time controller responsible for both actuation and measurement. For actuation, a servo motor sweeps the radar head across a defined angular range. The Arduino generates a PWM control signal on the servo pin and implements the sweep using two stepwise loops: a forward sweep from the minimum angle to the maximum angle and a backward sweep from the maximum back to the minimum. After each angle update (\texttt{radarServo.write(angle)}), a short delay is introduced so the motor can physically settle at the requested position. This reflects an important architectural constraint: software commands are instantaneous, whereas mechanical systems require settling time before measurements become reliable.
 
-Reference it like \cref{tab:example}.
+For distance measurement, the Arduino triggers the ultrasonic sensor by emitting a short pulse on the trigger line and measures the resulting echo pulse width on the echo line using \texttt{pulseIn(...)}. Conceptually, this converts a timing signal into data: the sensor produces a pulse duration $t$ (in microseconds), and the sketch converts that duration into a distance using the URM37-specific rule
+\[
+\text{cm} = \frac{t}{50}.
+\]
+If no pulse arrives within the timeout or if the measured values are implausible, the sketch outputs \texttt{-1} to indicate an invalid or out-of-range reading.
 
-\chapter{Discussion}
-Interpret results: what do they mean, limitations, what surprised you, why it matters.
+After obtaining an angle and a distance, the Arduino transmits the results to the host system via serial communication using \texttt{Serial.println(...)} at 9600 baud. The transmitted format is line-based, human-readable ASCII (e.g., \texttt{angle,cm}), which simplifies debugging and supports clear message framing through newline termination.
 
-\chapter{Conclusion}
-Summarize the key points and suggest future work.
+\subsection{USB and operating system abstraction}
+Microcontroller-to-host communication is transported via USB, where the Arduino is presented as a USB serial device (virtual serial port). Upon connection, the operating system performs USB enumeration: device descriptors are read (VID/PID, class information, endpoints), a suitable driver is loaded (CDC ACM or vendor-specific), and a system-visible device interface is created that applications can open as a byte stream.
 
-% ---------- Bibliography ----------
-\clearpage
-\bibliographystyle{plainnat}
-\bibliography{references}
+Platform differences are visible at this abstraction boundary. On Windows, the driver typically creates a COM port (e.g., \texttt{COM7}) and applications access it via Win32 serial APIs (internally via calls such as \texttt{CreateFile("\\textbackslash\\textbackslash.\\textbackslash COM7", ...)}). On macOS, the device appears as \texttt{/dev/tty.*} or \texttt{/dev/cu.*} and is accessed using POSIX I/O. On Linux, similar devices commonly appear as \texttt{/dev/ttyACM0} or \texttt{/dev/ttyUSB0}. Despite differences in naming and APIs, the core abstraction is consistent: the operating system exposes the physical USB device as a stream-oriented interface.
 
-% ---------- Appendix ----------
-\appendix
-\chapter{Extra Material}
-Put long tables, extra figures, or code here.
+Two practical properties of serial devices influence system behaviour. First, serial ports are typically exclusive resources: if one process holds the port open, other processes cannot access it simultaneously. Second, many Arduino boards reset upon port opening because control lines such as DTR/RTS are toggled, causing the microcontroller to restart and execute \texttt{setup()} again. As a result, initial bytes received by the host may contain boot-time output; the host-side software must therefore tolerate initial noise and synchronize on valid measurement records.
+
+\subsection{Host application interface (Processing)}
+On the host side, Processing accesses the virtual serial port as a byte stream. 
+The protocol uses newline-terminated records so that the stream can be framed into complete messages for parsing. 
+The concrete parsing logic and the radar UI update behaviour are described in detail in Section~\ref{sec:visualization}.
+
+\section{Visualization}\label{sec:visualization}
+% =========================
+
+\subsection{Purpose of the visuals}
+The visualization provides a real-time radar user interface that makes the sensor data immediately interpretable. 
+The display is structured as a half-circle scan area ($0^\circ$--$180^\circ$) with a moving sweep line (``beam'') that 
+represents the current scan direction. Detected objects are rendered as distance points (``blips'' / trail dots) positioned according to the 
+measured distance at the corresponding angle. To support orientation and scale, the UI includes a range grid (concentric arcs) and distance labels in centimeters.
+The visualization is explicitly designed to integrate with Arduino sensor data transmitted via USB serial, 
+and, once the servo is present, to use a servo-driven real angle rather than a purely simulated sweep.
+
+\subsection{First implementation attempt: C + raylib (prototype)}
+The initial prototype was implemented as a Windows program in C using \texttt{raylib}. 
+The rendering pipeline drew the radar background (arcs and angle divider lines), a sweeping beam, 
+and blips with a fading lifetime, creating the intended ``radar refresh'' effect.
+
+A major part of this prototype was the serial integration, implemented directly against the Windows API. 
+Communication was handled via Windows COM ports using \texttt{CreateFileA}, with the connection configured 
+through \texttt{DCB} settings (baud rate, 8N1). To avoid blocking and to keep the UI responsive, 
+the design relied on non-blocking reads using \texttt{COMMTIMEOUTS} and queue inspection via \texttt{ClearCommError} / \texttt{COMSTAT}. 
+A robust ``read line'' mechanism was implemented by accumulating bytes into a buffer, detecting newline termination (\texttt{\textbackslash n}), 
+trimming \texttt{\textbackslash r\textbackslash n}, parsing numeric values, and ignoring unrelated text.
+
+In addition, an auto-detection / handshake approach was introduced to support a plug-and-play experience. 
+The program scanned \texttt{COM1..COM64} automatically, toggled DTR to trigger Arduino reset, and waited for a signature 
+string such as \texttt{RADAR\_READY} to confirm the correct port. The intended workflow was: 
+connect USB $\rightarrow$ start program $\rightarrow$ automatic detection $\rightarrow$ live radar output.
+
+In practice, this setup proved unreliable for consistent operation. Windows serial behaviour is sensitive to port 
+contention (e.g., an open Serial Monitor), timing immediately after reset, and partial or malformed lines during Arduino boot; 
+additionally, COM port numbering differs across machines. The result was intermittent failure modes: sometimes no data, 
+sometimes incorrect or ``simulated-looking'' values, and occasional crashes when the expected line structure was not present in the buffer.
+
+The rendering portion was successful, but low-level serial I/O on Windows became disproportionately time-consuming compared to 
+the core project goal of iterating on the visualization and pipeline behaviour.
+
+\subsection{Switch to Processing (final implementation path)}
+The final implementation moved to Processing to reduce OS-specific complexity and accelerate iteration. 
+Processing's serial library provides a high-level interface that matches the project's protocol design directly: 
+selecting the correct port and baud rate is straightforward, \texttt{bufferUntil('\textbackslash n')} supports 
+line-based framing, and \texttt{serialEvent()} receives complete records. This removed a large class of platform-specific 
+pitfalls and allowed focus to shift back to the visualization logic and the end-to-end data pipeline.
+
+\subsection{How the current Processing radar UI works}
+The Processing-based system can be described as a clear data pipeline from connection to rendered output:
+
+\begin{enumerate}
+  \item \textbf{Arduino plugged in.}
+  After connection, the Arduino begins transmitting newline-terminated serial records. Two formats are supported to allow smooth development progression:
+  \begin{itemize}
+    \item \textit{distance-only} (early stage without servo feedback)
+    \item \textit{angle,distance} (final stage with servo-based real angle)
+  \end{itemize}
+
+  \item \textbf{Processing reads serial.}
+  Processing opens the selected COM port at the configured baud rate and buffers input until newline 
+  termination (\texttt{\textbackslash n}). On each complete line, the handler:
+  \begin{itemize}
+    \item trims whitespace and line endings,
+    \item ignores non-data noise (e.g., boot messages or handshake strings),
+    \item parses either a single distance value or a pair \textit{angle} + \textit{distance}.
+  \end{itemize}
+  If only distance is present, the program updates the current distance and continues using the simulated sweep angle. 
+  If angle and distance are provided, the real servo angle becomes the authoritative scan direction.
+
+  \item \textbf{Angle handling: simulated vs.\ real.}
+  During early development, the servo motor was not yet integrated, but the visualization needed a scan direction to behave 
+  like radar. A simulated sweep angle was therefore implemented: it increments from $0 \rightarrow 180$ and then back $180 \rightarrow 0$, 
+  matching the intended servo motion. This allowed testing and refining the full UI independent of motor hardware. 
+  Once the servo is available, the real angle sent by the Arduino overrides the simulated angle, keeping the display physically consistent with the scanning head.
+
+  \item \textbf{Visual update logic.}
+  Each frame renders the radar in layered steps:
+  \begin{itemize}
+    \item draw the grid (arcs and divider lines),
+    \item draw the current sweep line,
+    \item update the ``measurement bucket'' corresponding to the current sweep angle.
+  \end{itemize}
+  If a distance value is valid (e.g., within \texttt{MAX\_CM}), a detection point is stored for that angle bucket. 
+  If the value is invalid or out of range, the bucket is cleared---replicating the radar behaviour where the sweep 
+  effectively ``erases'' old detections when it rescans empty space.
+
+  \item \textbf{Trail persistence and fading.}
+  To create persistence without accumulating unlimited points, the system stores one point per small angle 
+  segment (defined by \texttt{ANGLE\_BUCKET\_DEG}). Each stored point fades after creation: its alpha decreases 
+  over a configured time window (from full visibility down to a minimum alpha). When the sweep returns to the same bucket, 
+  that entry is overwritten---either by a fresh detection, or by a clear if nothing is detected. This produces the intended 
+  radar effect: detections persist briefly, then decay, and disappear naturally on refresh.
+\end{enumerate}
+
+
+\section{Conclusion}
+% Paste your conclusion here.
+
+\section{Declaration of Authorship}
+
+ChatGPT was used solely to improve the clarity and coherence of the report's language. All ideas, analyses, 
+and interpretations presented reflect the group's own work and research.
+
 
 \end{document}
