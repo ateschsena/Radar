@@ -17,7 +17,7 @@ out/
 *.toc
 
 # PDF output (optional: decide if you want PDFs versioned)
-*.pdf
+
 
 # Editor / OS junk
 .vscode/

@@ -1,0 +1,146 @@
+Visuals Report:
+
+1. Purpose of the visuals:
+visuals provide real time radar UI.
+half circle scan area (0-180)
+sweep line ("beam")
+detected distance points ("blibs"/trail)
+range grid + labels (cm)
+Visualization is designed to work with arduino sensor data via usb serial, and with a servo-based real angle.
+
+2) First implementation attempt: C + raylib (prototype)
+
+Explain what it looked like and what you tried to do:
+You built a Windows program in C using raylib to draw:
+arcs + angle lines,
+a sweeping beam,
+“blips” (distance points) with fading lifetime.
+
+Then mention the serial integration you implemented (this is actually advanced and looks great in a report):
+Serial integration approach (Windows API)
+Communicated via Windows COM ports using CreateFileA.
+Configured serial settings via DCB (baud rate, 8N1).
+Used non-blocking reads with COMMTIMEOUTS + queue check via ClearCommError / COMSTAT.
+Implemented a robust “read line” buffer:
+accumulated bytes,
+detected newline \n,
+trimmed \r\n,
+parsed numeric distance and ignored other text.
+Auto-detection / handshake idea
+Program scanned COM1..COM64 automatically.
+Reset Arduino by toggling DTR.
+Waited for a signature string like RADAR_READY to confirm the correct port.
+This was meant to make it “plug in USB → run program → it just works”.
+
+Why it was unreliable in practice (what your screenshots show)
+Serial on Windows is sensitive to:
+port being busy (Serial Monitor open),
+timing after reset,
+partial / missing lines (especially during Arduino boot),
+different COM port numbers on different machines.
+
+Result: sometimes no data, sometimes wrong/“simulated-looking” values, sometimes crash when no proper line arrived (depending on what happened in the serial buffer).
+
+Conclusion
+The rendering part worked, but serial I/O on Windows at this level became a time sink compared to your actual goal (visual iteration).
+
+3) Switch to Processing (final implementation path)
+
+This is the “project decision” section:
+Reason for switching
+Processing provides serial communication with minimal overhead:
+select port and baud,
+bufferUntil('\n'),
+serialEvent() gets complete lines.
+This removed OS-specific pitfalls and let you iterate quickly on visuals.
+
+4) How the current Processing radar works (step-by-step)
+
+Write it as a data pipeline:
+
+(1) Arduino plugged in
+Arduino starts sending serial lines.
+Two supported formats:
+distance
+or angle,distance (when servo exists later)
+
+(2) Processing reads serial
+Processing opens the COM port at BAUD.
+It buffers until newline \n.
+On each full line, it:
+trims it,
+ignores noise like BOOT / RADAR_READY,
+parses either:
+only distance → sets distanceCm and uses simulated sweep angle
+angle+distance → uses real angle from teammate’s motor code.
+
+(3) Angle handling: simulated vs real
+Prototype constraint: you had no servo motor yet.
+So you added a simulated sweep angle:
+angle increments from 0→180 and back.
+this allowed you to build and test the full radar UI without the motor hardware.
+Later, once servo is implemented, the real angle coming from Arduino overrides the simulated one.
+
+(4) Visual update logic
+Each frame:
+draw radar grid (arcs + divider lines)
+draw sweep line
+update “bucket” at the sweep angle:
+if distance is valid (within MAX_CM), store a point
+if distance invalid/out of range, clear that bucket (sweep “erases” old detections)
+
+(5) Trail persistence + fading
+You store one point per small angle segment (ANGLE_BUCKET_DEG).
+
+Point fades immediately after being created:
+alpha decreases from 255 down to MIN_ALPHA over FADE_MS.
+When the sweep passes that angle again, the bucket is overwritten:
+either replaced with a new detection,
+or cleared if nothing is detected.
+
+5) Why Processing?
+
+
+6) Visual progression using Processing (what changed over time)
+Version 1: Basic radar + temorary trail (works with distance only)
+What you see: A green half-circle grid, a sweep line, and a short-lived “trail” of dots that fades out after a fixed time window.
+How it worked: 
+The sketch can operate without a real servo: it runs a simulated sweep angle between 0° and 180° (Simulate angle if missing)
+Every valid distance reading creates a Ping(angle, distance) and pushes it into an ArrayList called trail. Old pings are removed after TRAIL_MS, and alpha is computed from age to fade them out.
+The serial protocol already supports two input formats: "angle, distance" or "distance" only (prototype mode). It also ignores handshake/noise likes like BOOT and RADAR_READY.
+Why I changed it: The trail looked cool but wasn't radar-realistic: points faded based on time only, not on the sweep behaviour, and the "screen history" didn't match how real darar refreshes.
+
+Version 2: Persistent dots + proper fading (per angle bucket)
+What you see: Instead of a general trail list, you now get one dot per angle bucket, which stays until overwritten, and fades smoothly over time.
+How it worked:
+You store data in a fixed array Ping[] latest = new Ping[181] and quantize angles using ANGLE_BUCKET_DEG.
+Each ping stores a bornMS timestamp; alpha is computed from age so fading starts immediately after spawn and eases down towards MIN_ALPHA over FADE_MS.
+Serial parsing stays the same (distance-only vs angle + distance, handshake ignored).
+Why I changed it: This fixed the "random smearing" of Version 1 and made the radar output stable and readable, but it still didn't behave like a sweep that "refreshes" the screen.
+
+Version 3: Real radar refresh logic ("sweep overwrites /clears")
+What you see: The sweep line actively refreshes what’s under it: when it passes an angle, it overwrites that bucket with a new ping (if valid),
+or clears it if nothing is detected. The trail is red, and dots still fade.
+How it worked:
+The sweep no longer only draws, it also updates the current bucket every frame: 
+    Valid reading: overwrite latest[aInt] with a fresh Ping(..., millis())
+    Invalid/out of range: set latest[aInt] = null to "sweep away" old detections
+I also improved usability: fixing text alignment so UI doesn't clip (textAlign(LEFT, TOP)). Also the grid has distance labels for the arcs based on MAX_CM.
+
+Final Version: real servo angle input (no more simulated angle)
+In early stages the hardware prototype did not provide a real angle (no servo), so I used a simulated sweep to still test the UI and logic. 
+That simulated angle was only used if serial data didn't contain an angle.
+The final setup, the Arduino + servo provides real angles, so the visualization switches from "SIMULATED angle" to "REAL angle from Serial" once "angle,distance" arrives.
+This keeps the code compatible with both phases of development (prototype vs final hardware).
+
+
+
+
+7) How does the pipeline work
+- Serial Connection / COM port
+Arduino appears on the PC as serial device (Windows: COMx)
+The Processing sketch uses processing.serial.* and prints Serial.list() at startup to show available ports. 
+You select the correct port (e.g. COM7) and open it with a fixed baud rate (new Serial(this, "COM7, BAUD)), which must match the Arduino sketch's Serial.begin(BAUD).
+- Baud rate + reliability requirements
+
+
