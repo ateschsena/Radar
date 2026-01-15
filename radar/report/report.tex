@@ -101,7 +101,6 @@ Radar-style ranging and visualization are widely used because they provide robus
 \section{End-to-End Pipeline}
 
 The system forms a complete measurement and visualization pipeline:
-Sensor $\rightarrow$ Arduino $\rightarrow$ USB $\rightarrow$ Operating System $\rightarrow$ Processing $\rightarrow$ Visualization.
 
 \begin{figure}[H]
   \centering
@@ -265,14 +264,14 @@ The Processing-based system can be described as a clear data pipeline from conne
     \item update the ``measurement bucket'' corresponding to the current sweep angle.
   \end{itemize}
   If a distance value is valid (e.g., within \texttt{MAX\_CM}), a detection point is stored for that angle bucket. 
-  If the value is invalid or out of range, the bucket is cleared---replicating the radar behaviour where the sweep 
+  If the value is invalid or out of range, the bucket is cleared, replicating the radar behaviour where the sweep 
   effectively ``erases'' old detections when it rescans empty space.
 
   \item \textbf{Trail persistence and fading.}
   To create persistence without accumulating unlimited points, the system stores one point per small angle 
   segment (defined by \texttt{ANGLE\_BUCKET\_DEG}). Each stored point fades after creation: its alpha decreases 
   over a configured time window (from full visibility down to a minimum alpha). When the sweep returns to the same bucket, 
-  that entry is overwritten---either by a fresh detection, or by a clear if nothing is detected. This produces the intended 
+  that entry is overwritten, either by a fresh detection, or by a clear if nothing is detected. This produces the intended 
   radar effect: detections persist briefly, then decay, and disappear naturally on refresh.
 \end{enumerate}
 
