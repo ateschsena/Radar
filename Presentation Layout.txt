@@ -1,0 +1,30 @@
+- Introduction:
+    - why radar project?
+    - how do radars work?
+    - what is it good for (applications)?
+    
+    
+- Planning:
+    - Research (components, layout)
+    - Timeline
+    - Ideas (LCD, 2D)
+
+- Hardware:
+    - Hardware (Sandro)
+    - schema diagram
+    - testing hardware
+    - why we used each compoonent
+
+- Code:
+    - Visualization (Aiysha)
+    - Arduino (Sena)
+
+(- actual presentation:)
+
+- Outro:
+    - Problems (anticipated/real)
+    - What did we learn/problems solved?
+    - Summary
+    - Conclusion
+
+- AI acknowledgment
