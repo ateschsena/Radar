@@ -87,25 +87,12 @@ Abstract of project
 % ==========================================================
 \section{Introduction}
 
-A ``radar screen'' is one of the simplest ways to make an invisible physical process visible: a single moving line, a few dots, and suddenly distance 
-becomes something that can be seen in real time. This project implements a compact ultrasonic ``radar'' as a classic learning system that remains feasible 
-to build while still exposing an unusually complete end-to-end pipeline. The motivation is primarily educational: a timing-based sensor measurement 
-is performed on a microcontroller, the results are streamed to a computer over USB as a serial data protocol, and a visualization program turns the incoming 
-measurements into an immediately interpretable display. In this sense, the system is less about replicating military radar and more about demonstrating 
-architecture-relevant concepts in a tangible form---signal acquisition, data representation, I/O interfaces, and real-time feedback.
+A ``radar screen'' is a simple but powerful way to make an invisible physical process visible: a moving sweep line and a few dots are enough to turn raw distance measurements into an intuitive, real-time picture. This project implements a compact ultrasonic ``radar'' as an educational system that is feasible to build, yet still representative of the layered hardware--software interaction discussed in computer architecture. The central motivation is therefore not to replicate military radar, but to create a small end-to-end system in which sensing, data transfer, and real-time feedback can be observed and reasoned about directly.
 
-The underlying mapping principle follows the radar idea: a wave is emitted, reflections are received, and distance is derived from time-of-flight. 
-To place a measured distance in space, it must also be associated with an angle. This directional component can be obtained by mechanically rotating the 
-sensor (servo-based scanning) or, in more advanced systems, by electronically steering a beam using an array. Repeating measurements across many angles 
-produces a polar dataset (\textit{angle, distance}), which can be rendered as the familiar 2D ``radar screen.'' Although ultrasound is used 
-here (physically closer to sonar), the data model and visualization are radar-like: each measurement becomes a point in polar space.
+At its core, radar-like sensing is based on time-of-flight. A wave is emitted, reflections are received, and the elapsed time is mapped to distance. To place a distance measurement in space, it must also be associated with a direction, i.e., an angle. In this project, direction is obtained by scanning across a range of angles, producing a polar dataset of the form (\textit{angle, distance}) that can be rendered as the familiar 2D radar display. Although ultrasound is used here (physically closer to sonar), the underlying data model and visualization follow the radar principle.
 
-A key aspect of the implementation is the explicit system boundary between embedded and host-side processing. The Arduino controls the scan and 
-performs the timing-critical distance measurement, then serializes results into a compact text stream (e.g., \texttt{angle,cm}) over USB. 
-The operating system exposes the device as a standard serial endpoint (COM/TTY), and the visualization application continuously reads, parses, 
-and renders the stream to update the display in real time. Development was also constraint-driven: early visual work was done with a prototype that 
-lacked a servo motor, so the display supported a simulated sweep angle to validate rendering and parsing before switching to the final protocol based 
-on real (\textit{angle, cm}) measurements once mechanical scanning was available.
+Radar-style ranging and visualization are widely used because they provide robust spatial awareness with relatively simple sensing: examples include obstacle detection and parking assistance, robotics navigation, industrial level and proximity monitoring, and security or presence detection. By implementing a radar-like interface on top of an ultrasonic sensor, the project connects these real-world applications to fundamental architectural concepts such as signal acquisition, data representation, I/O abstractions, and continuous real-time visualization.
+
 
 
 % =========================
