@@ -1,9 +1,0 @@
-Windows C + raylib version that auto-detects your Arduino by doing a handshake:
-
-It scans COM ports
-
-Opens each port at 9600
-
-Toggles DTR (this resets the Arduino so it reprints RADAR_READY)
-
-Waits briefly for a line containing RADAR_READY
