@@ -98,6 +98,7 @@ The project is primarily an educational end-to-end system that makes the hardwar
 \section{Hardware}
 
 % ==========================================================
+\section{Servo Sweep Control}
 % ==========================================================
 \section{System Overview: From Echo to Visualization}\label{sec:system-overview}
 
@@ -117,9 +118,6 @@ into lines, parses angle and distance, and updates the visualization state used 
   \label{fig:pipeline}
 \end{figure}
 
-% ==========================================================
-
-% ==========================================================
 % ==========================================================
 \section{Visualization}\label{sec:visualization}
 
@@ -181,10 +179,25 @@ intuitive behavior that detections persist briefly and disappear naturally on re
 \end{figure}
 
 
-
+==========================================================
 
 \section{Conclusion}
-% Paste your conclusion here.
+We implemented an end-to-end ultrasonic ``radar-style'' system that turns echo time-of-flight into a live 2D
+visualization. This project made the full stack tangible: the Arduino converts timing signals into structured
+serial records, USB transports them as bytes, the operating system exposes the device as a serial port, and
+Processing frames, parses, and renders the stream into an interpretable scan display.
+
+A key lesson was building robustness across layers and constraints. We observed practical serial-port behavior
+(e.g., exclusivity and startup noise) and designed the software to handle imperfect input. Since the servo was
+not available during early visualization work, the Processing program supports both a simulated sweep and a
+servo-driven angle mode, switching automatically when angle data is present.
+
+\paragraph{Division of labor.}
+All group members contributed to assembling the hardware setup. Sandro implemented the main Arduino sensing
+and communication code and built the stand/chassis. Senanur developed the Arduino servo sweep control. Aiysha
+implemented the Processing visualization, including parsing and bucket-based rendering.
+
+==========================================================
 
 \section{Declaration of Authorship}
 
