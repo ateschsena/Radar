@@ -98,11 +98,17 @@ The project is primarily an educational end-to-end system that makes the hardwar
 \section{Hardware}
 
 % ==========================================================
+% ==========================================================
+\section{System Overview: From Echo to Visualization}\label{sec:system-overview}
 
-
-\section{End-to-End Pipeline}
-
-The system forms a complete measurement and visualization pipeline:
+Figure~\ref{fig:pipeline} summarizes the end-to-end pipeline. The ultrasonic sensor returns an
+\emph{echo pulse width}, i.e., a time duration proportional to the time-of-flight.
+The Arduino controls the servo sweep via PWM, triggers the sensor, measures the echo duration
+(e.g., with \texttt{pulseIn}), converts it to a distance in centimeters, and transmits one
+newline-terminated ASCII record per measurement (\texttt{angle,cm}).
+Over USB the payload is a byte stream which the operating system exposes as a serial device
+(e.g., a COM port on Windows). The Processing program opens this port, frames the incoming bytes
+into lines, parses angle and distance, and updates the visualization state used for rendering.
 
 \begin{figure}[H]
   \centering
@@ -110,31 +116,6 @@ The system forms a complete measurement and visualization pipeline:
   \caption{End-to-end pipeline from sensing on the Arduino to visualization on the host.}
   \label{fig:pipeline}
 \end{figure}
-
-An Arduino-to-PC visualization setup was selected because it exposes the full communication stack discussed in computer architecture in a compact, observable system: a physical device produces signals, a microcontroller converts those signals into data, a transport layer (USB) exposes the device to the host, an operating system abstracts the hardware as files/handles/ports, and an application interprets a continuous byte stream into meaningful state and graphics. This structure makes the transformation of information across layers explicit and traceable.
-
-\subsection{Hardware layer: actuation and sensing}
-On the hardware side, the Arduino functions as a real-time controller responsible for both actuation and measurement. For actuation, a servo motor sweeps the radar head across a defined angular range. The Arduino generates a PWM control signal on the servo pin and implements the sweep using two stepwise loops: a forward sweep from the minimum angle to the maximum angle and a backward sweep from the maximum back to the minimum. After each angle update (\texttt{radarServo.write(angle)}), a short delay is introduced so the motor can physically settle at the requested position. This reflects an important architectural constraint: software commands are instantaneous, whereas mechanical systems require settling time before measurements become reliable.
-
-For distance measurement, the Arduino triggers the ultrasonic sensor by emitting a short pulse on the trigger line and measures the resulting echo pulse width on the echo line using \texttt{pulseIn(...)}. Conceptually, this converts a timing signal into data: the sensor produces a pulse duration $t$ (in microseconds), and the sketch converts that duration into a distance using the URM37-specific rule
-\[
-\text{cm} = \frac{t}{50}.
-\]
-If no pulse arrives within the timeout or if the measured values are implausible, the sketch outputs \texttt{-1} to indicate an invalid or out-of-range reading.
-
-After obtaining an angle and a distance, the Arduino transmits the results to the host system via serial communication using \texttt{Serial.println(...)} at 9600 baud. The transmitted format is line-based, human-readable ASCII (e.g., \texttt{angle,cm}), which simplifies debugging and supports clear message framing through newline termination.
-
-\subsection{USB and operating system abstraction}
-Microcontroller-to-host communication is transported via USB, where the Arduino is presented as a USB serial device (virtual serial port). Upon connection, the operating system performs USB enumeration: device descriptors are read (VID/PID, class information, endpoints), a suitable driver is loaded (CDC ACM or vendor-specific), and a system-visible device interface is created that applications can open as a byte stream.
-
-Platform differences are visible at this abstraction boundary. On Windows, the driver typically creates a COM port (e.g., \texttt{COM7}) and applications access it via Win32 serial APIs (internally via calls such as \texttt{CreateFile("\\textbackslash\\textbackslash.\\textbackslash COM7", ...)}). On macOS, the device appears as \texttt{/dev/tty.*} or \texttt{/dev/cu.*} and is accessed using POSIX I/O. On Linux, similar devices commonly appear as \texttt{/dev/ttyACM0} or \texttt{/dev/ttyUSB0}. Despite differences in naming and APIs, the core abstraction is consistent: the operating system exposes the physical USB device as a stream-oriented interface.
-
-Two practical properties of serial devices influence system behaviour. First, serial ports are typically exclusive resources: if one process holds the port open, other processes cannot access it simultaneously. Second, many Arduino boards reset upon port opening because control lines such as DTR/RTS are toggled, causing the microcontroller to restart and execute \texttt{setup()} again. As a result, initial bytes received by the host may contain boot-time output; the host-side software must therefore tolerate initial noise and synchronize on valid measurement records.
-
-\subsection{Host application interface (Processing)}
-On the host side, Processing accesses the virtual serial port as a byte stream. 
-The protocol uses newline-terminated records so that the stream can be framed into complete messages for parsing. 
-The concrete parsing logic and the radar UI update behaviour are described in detail in Section~\ref{sec:visualization}.
 
 % ==========================================================
 
