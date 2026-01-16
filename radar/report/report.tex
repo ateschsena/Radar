@@ -90,6 +90,12 @@ We built a compact ultrasonic ``radar-style'' scanner that turns echo timing int
 An ultrasonic pulse is emitted and the return echo duration encodes time-of-flight, which the microcontroller converts to distance. 
 By sweeping the sensor with a servo, each measurement becomes an $(\textit{angle}, \textit{distance})$ pair that can be rendered in polar form.
 The project is primarily an educational end-to-end system that makes the hardware--software stack observable: sensing, embedded processing, USB serial transport, OS I/O abstraction, and real-time visualization.
+\paragraph{Contributions.}
+\begin{itemize}
+  \item End-to-end ultrasonic scan pipeline from time-of-flight echo to 2D visualization.
+  \item Arduino firmware for servo sweep, echo-to-distance conversion, and newline-framed serial protocol.
+  \item Processing visualization with robust line parsing and bucket-based refresh behaviour.
+\end{itemize}
 
 % ==========================================================
 \section{Planning}
@@ -118,6 +124,7 @@ into lines, parses angle and distance, and updates the visualization state used 
   \label{fig:pipeline}
 \end{figure}
 
+% ==========================================================
 % ==========================================================
 \section{Visualization}\label{sec:visualization}
 
@@ -160,37 +167,28 @@ the most recent distance for that slice and is overwritten when the sweep return
 arrives for a slice, the corresponding bucket is cleared. This keeps memory bounded and creates the
 intuitive behavior that detections persist briefly and disappear naturally on rescan.
 
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{images/secondPrototype.png}
-    \caption{Early Processing iteration used to validate coordinate mapping and sweep direction.}
-    \label{fig:proc-early}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{images/secondPrototypeFade.png}
-    \caption{Intermediate iteration with a fading persistence effect per bucket.}
-    \label{fig:proc-fade}
-  \end{subfigure}
-  \caption{Processing visualization iterations during development.}
-  \label{fig:proc-evolution}
-\end{figure}
-
 
 %==========================================================
+\section{Evaluation}
+% Functional check: does it detect objects and update live?
+% Range/limitations: max reliable cm, noise, resolution, update rate.
+% Match with original goal.
+
 
 \section{Conclusion}
-We implemented an end-to-end ultrasonic ``radar-style'' system that turns echo time-of-flight into a live 2D
-visualization. This project made the full stack tangible: the Arduino converts timing signals into structured
-serial records, USB transports them as bytes, the operating system exposes the device as a serial port, and
-Processing frames, parses, and renders the stream into an interpretable scan display.
+We built an end-to-end ultrasonic ``radar-style'' system that turns echo time-of-flight into a live 2D visualization. 
+The project made the full stack tangible: the Arduino converts timing signals into serial records, USB carries them as bytes, 
+the OS exposes a serial port, and Processing parses the stream into a radar-style display.
 
-A key lesson was building robustness across layers and constraints. We observed practical serial-port behavior
-(e.g., exclusivity and startup noise) and designed the software to handle imperfect input. Since the servo was
-not available during early visualization work, the Processing program supports both a simulated sweep and a
-servo-driven angle mode, switching automatically when angle data is present.
+A key lesson was robustness across layers. We handled practical serial-port issues (exclusive access, startup noise) and, since 
+the servo was unavailable early on, designed the visualization to run in simulated sweep mode and switch automatically 
+to real-angle mode when angle data is present.
+
+\paragraph{Self-assessment and outlook.}
+We deliberately kept the project relatively simple in order to fully understand each layer of the pipeline.
+With more time, we could increase complexity by adding an on-device LCD display (instead of a PC-based UI) and
+integrating basic controls such as a power/on-off button and a calibration routine. Overall, we achieved the
+original goal of a working, explainable end-to-end system.
 
 \paragraph{Division of labor.}
 All group members contributed to assembling the hardware setup. Sandro implemented the main Arduino sensing
@@ -198,6 +196,12 @@ and communication code and built the stand/chassis. Senanur developed the Arduin
 implemented the Processing visualization, including parsing and bucket-based rendering.
 
 %==========================================================
+
+\section{References}
+\begin{itemize}
+  \item Project source code repository: \url{https://github.com/ateschsena/Radar.git}
+\end{itemize}
+
 
 \section{Declaration of Authorship}
 
