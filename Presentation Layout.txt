@@ -16,8 +16,10 @@
     - why we used each compoonent
 
 - Code:
-    - Visualization (Aiysha)
     - Arduino (Sena)
+    - Pipeline
+    - Visualization (Aiysha)
+    
 
 (- actual presentation:)
 

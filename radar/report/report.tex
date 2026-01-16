@@ -86,18 +86,20 @@ Abstract of project
 
 % ==========================================================
 \section{Introduction}
+We built a compact ultrasonic ``radar-style'' scanner that turns echo timing into a live 2D visualization. 
+An ultrasonic pulse is emitted and the return echo duration encodes time-of-flight, which the microcontroller converts to distance. 
+By sweeping the sensor with a servo, each measurement becomes an $(\textit{angle}, \textit{distance})$ pair that can be rendered in polar form.
+The project is primarily an educational end-to-end system that makes the hardware--software stack observable: sensing, embedded processing, USB serial transport, OS I/O abstraction, and real-time visualization.
 
-A ``radar screen'' is a simple but powerful way to make an invisible physical process visible: a moving sweep line and a few dots are enough to turn raw distance measurements into an intuitive, real-time picture. This project implements a compact ultrasonic ``radar'' as an educational system that is feasible to build, yet still representative of the layered hardware--software interaction discussed in computer architecture. The central motivation is therefore not to replicate military radar, but to create a small end-to-end system in which sensing, data transfer, and real-time feedback can be observed and reasoned about directly.
+% ==========================================================
+\section{Planning}
 
-At its core, radar-like sensing is based on time-of-flight. A wave is emitted, reflections are received, and the elapsed time is mapped to distance. To place a distance measurement in space, it must also be associated with a direction, i.e., an angle. In this project, direction is obtained by scanning across a range of angles, producing a polar dataset of the form (\textit{angle, distance}) that can be rendered as the familiar 2D radar display. Although ultrasound is used here (physically closer to sonar), the underlying data model and visualization follow the radar principle.
+% ==========================================================
+\section{Hardware}
 
-Radar-style ranging and visualization are widely used because they provide robust spatial awareness with relatively simple sensing: examples include obstacle detection and parking assistance, robotics navigation, industrial level and proximity monitoring, and security or presence detection. By implementing a radar-like interface on top of an ultrasonic sensor, the project connects these real-world applications to fundamental architectural concepts such as signal acquisition, data representation, I/O abstractions, and continuous real-time visualization.
+% ==========================================================
 
 
-
-% =========================
-% End-to-End Pipeline
-% =========================
 \section{End-to-End Pipeline}
 
 The system forms a complete measurement and visualization pipeline:
@@ -134,8 +136,9 @@ On the host side, Processing accesses the virtual serial port as a byte stream.
 The protocol uses newline-terminated records so that the stream can be framed into complete messages for parsing. 
 The concrete parsing logic and the radar UI update behaviour are described in detail in Section~\ref{sec:visualization}.
 
+% ==========================================================
+
 \section{Visualization}\label{sec:visualization}
-% =========================
 
 \begin{figure}[H]
   \centering
