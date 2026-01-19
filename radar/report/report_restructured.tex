@@ -85,16 +85,23 @@
 \begin{abstract}
 % TODO(Abstract): -> Sandro
 %Replace with 150--250 words that state goal + concrete results (e.g., "We successfully ...").
-Abstract of project
+We built a simple ultrasonic ``radar-style'' scanner that measures distance and visualizes the results live in 2D. An Arduino triggers a URM37 ultrasonic sensor, measures the echo pulse width, converts it to centimeters, and sends one newline-terminated record per sample in the format \texttt{angle,cm}. A servo sweeps the sensor so that each reading becomes an \textit{(angle, distance)} pair that can be drawn in polar coordinates on the host.
+
+The system works reliably for typical indoor test objects: stationary targets produce consistent readings across multiple sweeps, and missing or out-of-range echoes are sent as \texttt{-1} and do not create false points in the visualization. Overall, the project shows how sensor measurements can be collected on an Arduino and visualized live on a computer.
 \end{abstract}
+
 
 \tableofcontents
 \newpage
 
 % ==========================================================
 \section{Introduction}
-We built a compact ultrasonic ``radar-style'' scanner that converts echo time-of-flight into distance and visualizes it live in 2D. 
-A servo sweep produces \textit{(angle, distance)} measurements that are rendered in polar coordinates, making the end-to-end stack observable from sensing and embedded processing to USB serial transport and real-time visualization.
+
+
+We built a compact ultrasonic ``radar-style'' scanner that converts echo timing into distance and visualizes it live in 2D.
+The servo sweep generates \textit{(angle, distance)} pairs that are transmitted over USB serial and rendered in polar coordinates on the host.
+
+
 
 \paragraph{Contributions.}
 \begin{itemize}
@@ -167,6 +174,14 @@ We first prototyped the UI in C using \texttt{raylib}, but the end-to-end system
 % - how sweep direction changes at boundaries
 % (write here)
 
+Sweeping is implemented with \texttt{Servo.h}. The servo moves from \texttt{MIN\_ANGLE} to \texttt{MAX\_ANGLE} in
+steps of \texttt{STEP\_ANGLE} and then reverses back.
+
+\paragraph{Parameters.}
+\texttt{MIN\_ANGLE=0}, \texttt{MAX\_ANGLE=180}, \texttt{STEP\_ANGLE=2}, \texttt{SERVO\_SETTLE\_MS=30 ms},
+\texttt{BETWEEN\_READ\_MS=10 ms}. A settling delay is used before each measurement to reduce motion-related errors.
+
+
 \subsection{Measurement and serial protocol}
 % TODO(Implementation/Measurement): -> Aiysha/Sena ?
 % Add missing *exact* conversion and edge cases:
@@ -178,6 +193,14 @@ We first prototyped the UI in C using \texttt{raylib}, but the end-to-end system
 % - baud rate (e.g., 9600)
 % - exact record format: "angle,cm\n" and value ranges
 The ultrasonic sensor returns an \emph{echo pulse width} proportional to time-of-flight. The Arduino triggers the sensor, measures the echo duration (e.g., with \texttt{pulseIn}), converts it to a distance in centimeters, and sends one newline-terminated ASCII record per measurement (\texttt{angle,cm}).
+
+Distance is derived from the URM37 echo pulse width $t$ (in $\mu$s) using:
+\[
+\text{cm} = \frac{t}{50}.
+\]
+If \texttt{pulseIn} times out or values are outside sanity bounds, the firmware outputs \texttt{-1}.
+Serial runs at \texttt{9600} baud and sends one record per sample as \texttt{angle,cm$\backslash$n}.
+
 
 \subsection{Host-side data flow}
 % TODO(Implementation/Host): -> Aiysha/Sena ?
@@ -210,7 +233,7 @@ Over USB this data is exposed by the OS as a serial device, which Processing rea
 % Ensure consistency:
 % - In Introduction you mention polar coordinates; here you use 15--165 deg FOV. Make sure this matches servo sweep.
 
-The visualization renders a radar-style scan over a $15^\circ$--$165^\circ$ field of view. A sweep line indicates the current angle, and each incoming $(\textit{angle}, \textit{distance})$ measurement is mapped to polar coordinates to draw a point at the corresponding radius. A static grid (concentric arcs and radial lines) provides scale and orientation.
+The visualization renders a radar-style scan over a $0^\circ$--$180^\circ$ field of view. A sweep line indicates the current angle, and each incoming $(\textit{angle}, \textit{distance})$ measurement is mapped to polar coordinates to draw a point at the corresponding radius. A static grid (concentric arcs and radial lines) provides scale and orientation.
 
 \subsection{Serial parsing and ``bucket'' state}
 % TODO(Implementation/Parsing): -> Aiysha/Sena ?
@@ -226,6 +249,10 @@ Processing receives a continuous byte stream and frames it into newline-terminat
 
 To keep memory bounded and emulate radar refresh behavior, the scan is discretized into fixed-width angle buckets (e.g., \texttt{ANGLE\_BUCKET\_DEG}). Each bucket stores the most recent distance for its slice and is overwritten on the next sweep; a \texttt{-1} clears the corresponding bucket.
 
+Malformed lines or parse errors are ignored. A typical setting is \texttt{ANGLE\_BUCKET\_DEG=2} to match the servo
+step size; each bucket stores the latest distance for its angle slice and is overwritten on rescan.
+
+
 
 \subsection{Reproducibility notes}
 % TODO(Implementation/Repro): -> Aiysha/Sena/Sandro
@@ -233,6 +260,11 @@ To keep memory bounded and emulate radar refresh behavior, the scan is discretiz
 % - required software versions (Arduino IDE, Processing version)
 % - how to flash Arduino, how to start Processing sketch
 % - what to configure (COM port name, baud rate)
+
+Flash the Arduino firmware (Arduino IDE 2.x) and verify \texttt{angle,cm} lines at \texttt{9600} baud.
+Start the Processing sketch (Processing 4.x), select the correct COM port, and set baud to \texttt{9600}.
+The full code and assets are in the GitHub repository referenced below.
+
 
 
 % ==========================================================
@@ -270,7 +302,7 @@ A key lesson was robustness across layers: we addressed practical serial-port is
 We kept the project intentionally simple to understand each layer of the pipeline. With more time, we would increase complexity by adding an on-device LCD (instead of a PC-based UI) and basic controls such as a power switch and calibration routine.
 
 \paragraph{Division of labor.}
-All group members assembled the hardware setup. Sandro implemented the main Arduino sensing/communication code and built the stand/chassis. Senanur developed the Arduino servo sweep control. Aiysha implemented the Processing visualization, including parsing and bucket-based rendering.
+All group members assembled the hardware setup and testing. Sandro implemented the main Arduino sensing/communication code and built the stand/chassis. Senanur developed the Arduino servo sweep control. Aiysha implemented the Processing visualization, including parsing and bucket-based rendering.
 
 % ==========================================================
 \newpage
