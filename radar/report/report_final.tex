@@ -86,18 +86,19 @@
 % -----------------------
 % Title meta
 % -----------------------
-\title{Radar Visualization Pipeline Report}
-\author{Aiysha Mei Frutiger, Sandro Barbazza, Senanur Ates,  \\ University of Basel \\ Computer Architecture}
+\title{Arduino-Based Radar System}
+\author{Aiysha Mei Frutiger, Sandro Barbazza, Senanur Ates,  \\ University of Basel, Computer Architecture}
 \date{January 19, 2026}
 
 \begin{document}
-\maketitle
 
+\maketitle
+\vspace{1cm}
 \begin{abstract}
 
 We built a simple ultrasonic ``radar-style'' scanner that measures distance and visualizes the results live in 2D. An Arduino triggers a URM37 ultrasonic sensor, measures the echo pulse width, converts it to centimeters, and sends one newline-terminated record per sample in the format \texttt{angle,cm}. A servo sweeps the sensor so that each reading becomes an \textit{(angle, distance)} pair that can be drawn in polar coordinates on the host.
 
-The system works reliably for typical indoor test objects: stationary targets produce consistent detections across multiple sweeps, and missing or out-of-range echoes are sent as \texttt{-1} and do not create false points in the visualization. The angular resolution is determined by the sweep step size (2$^\circ$), and the host visualization maintains a bounded state by storing only the latest measurement per angle bucket. Overall, the project demonstrates an end-to-end pipeline from ultrasonic time-of-flight measurement on an Arduino to a real-time radar-style visualization on a computer.
+The system works reliably for typical indoor test objects: stationary targets produce consistent detections across multiple sweeps, and missing or out-of-range echoes are sent as \texttt{-1} and do not create false points in the visualization. The angular resolution is determined by the sweep step size (2$^\circ$), and the host visualization maintains a bounded state by storing only the latest measurement per angle bucket. Overall, the project was successful demonstrates an end-to-end pipeline from ultrasonic time-of-flight measurement on an Arduino to a real-time radar-style visualization on a computer.
 \end{abstract}
 
 \newpage
